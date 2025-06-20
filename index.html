@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多機能タイマーアプリ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+```
+    body {
+        font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 24px;
+        padding: 3rem;
+        text-align: center;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+    }
+
+    .container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 35px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+        color: white;
+        font-size: 2.5rem;
+        font-weight: 300;
+        margin-bottom: 2rem;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .screen {
+        display: none;
+    }
+
+    .screen.active {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .mode-selector {
+        display: flex;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 0.5rem;
+        margin: 2rem 0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .mode-btn {
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 1rem;
+        color: rgba(255, 255, 255, 0.7);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .mode-btn.active {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        transform: scale(1.02);
+    }
+
+    .time-inputs {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+
+    .time-input {
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        padding: 1rem;
+        font-size: 2rem;
+        color: white;
+        text-align: center;
+        width: 100px;
+        outline: none;
+        transition: all 0.3s ease;
+    }
+
+    .time-input:focus {
+        border-color: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.25);
+        transform: scale(1.05);
+    }
+
+    .time-input::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .separator {
+        color: white;
+        font-size: 2rem;
+        font-weight: 300;
+    }
+
+    .btn {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        border: none;
+        border-radius: 50px;
+        padding: 1rem 2.5rem;
+        font-size: 1.1rem;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        margin: 0.5rem;
+        box-shadow: 0 10px 25px rgba(238, 90, 36, 0.3);
+    }
+
+    .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(238, 90, 36, 0.4);
+    }
+
+    .btn:active {
+        transform: translateY(-1px);
+    }
+
+    .btn.secondary {
+        background: linear-gradient(135deg, #74b9ff, #0984e3);
+        box-shadow: 0 10px 25px rgba(9, 132, 227, 0.3);
+    }
+
+    .btn.secondary:hover {
+        box-shadow: 0 15px 35px rgba(9, 132, 227, 0.4);
+    }
+
+    .btn.pause {
+        background: linear-gradient(135deg, #fdcb6e, #e17055);
+        box-shadow: 0 10px 25px rgba(225, 112, 85, 0.3);
+    }
+
+    .btn.pause:hover {
+        box-shadow: 0 15px 35px rgba(225, 112, 85, 0.4);
+    }
+
+    .current-time {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        font-weight: 300;
+    }
+
+    .target-time {
+        color: white;
+        font-size: 1.3rem;
+        margin: 1rem 0;
+        font-weight: 400;
+    }
+
+    .countdown {
+        color: white;
+        font-size: 3rem;
+        margin: 2rem 0;
+        font-weight: 200;
+        letter-spacing: 2px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .countdown.warning {
+        color: #ff6b6b;
+        animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    .alert-screen {
+        text-align: center;
+    }
+
+    .alert-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        animation: bounce 1s infinite;
+    }
+
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+        40% { transform: translateY(-20px); }
+        60% { transform: translateY(-10px); }
+    }
+
+    .alert-message {
+        color: white;
+        font-size: 2rem;
+        font-weight: 300;
+        margin-bottom: 2rem;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .time-display {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 1rem;
+        margin: 1rem 0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .quick-presets {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        margin: 1rem 0;
+        flex-wrap: wrap;
+    }
+
+    .preset-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 20px;
+        padding: 0.5rem 1rem;
+        color: white;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .preset-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .progress-ring {
+        width: 120px;
+        height: 120px;
+        margin: 1rem auto;
+        transform: rotate(-90deg);
+    }
+
+    .progress-ring-circle {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.3);
+        stroke-width: 8;
+    }
+
+    .progress-ring-progress {
+        fill: none;
+        stroke: #ff6b6b;
+        stroke-width: 8;
+        stroke-linecap: round;
+        transition: stroke-dasharray 0.3s ease;
+    }
+
+    @media (max-width: 600px) {
+        .container {
+            padding: 2rem 1.5rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+        }
+        
+        .time-input {
+            font-size: 1.5rem;
+            width: 80px;
+            padding: 0.8rem;
+        }
+        
+        .btn {
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+        }
+
+        .countdown {
+            font-size: 2.5rem;
+        }
+    }
+</style>
+```
+
+</head>
+<body>
+    <div class="container">
+        <!-- タイマー設定画面 -->
+        <div id="setupScreen" class="screen active">
+            <h1>⏰ タイマー設定</h1>
+            <div class="current-time" id="currentTime"></div>
+
+```
+        <!-- モード選択 -->
+        <div class="mode-selector">
+            <button class="mode-btn active" id="countdownMode" onclick="switchMode('countdown')">
+                カウントダウン
+            </button>
+            <button class="mode-btn" id="clockMode" onclick="switchMode('clock')">
+                時刻指定
+            </button>
+        </div>
+
+        <!-- カウントダウンモード -->
+        <div id="countdownInputs" class="mode-inputs">
+            <div class="quick-presets">
+                <button class="preset-btn" onclick="setPreset(25, 0, 0)">ポモドーロ 25分</button>
+                <button class="preset-btn" onclick="setPreset(5, 0, 0)">休憩 5分</button>
+                <button class="preset-btn" onclick="setPreset(1, 0, 0)">1分</button>
+                <button class="preset-btn" onclick="setPreset(0, 30, 0)">30秒</button>
+            </div>
+            
+            <div class="time-inputs">
+                <input type="number" class="time-input" id="hourInputCountdown" placeholder="時" min="0" max="23">
+                <span class="separator">:</span>
+                <input type="number" class="time-input" id="minuteInputCountdown" placeholder="分" min="0" max="59">
+                <span class="separator">:</span>
+                <input type="number" class="time-input" id="secondInputCountdown" placeholder="秒" min="0" max="59">
+            </div>
+        </div>
+
+        <!-- 時刻指定モード -->
+        <div id="clockInputs" class="mode-inputs" style="display: none;">
+            <div class="time-inputs">
+                <input type="number" class="time-input" id="hourInputClock" placeholder="時" min="0" max="23">
+                <span class="separator">:</span>
+                <input type="number" class="time-input" id="minuteInputClock" placeholder="分" min="0" max="59">
+            </div>
+        </div>
+        
+        <button class="btn" onclick="startTimer()">タイマー開始</button>
+    </div>
+
+    <!-- 稼働中画面 -->
+    <div id="runningScreen" class="screen">
+        <h1 id="runningTitle">⏳ タイマー稼働中</h1>
+        <div class="current-time" id="currentTimeRunning"></div>
+        
+        <!-- プログレスリング -->
+        <svg class="progress-ring" id="progressRing">
+            <circle class="progress-ring-circle" cx="60" cy="60" r="52"></circle>
+            <circle class="progress-ring-progress" cx="60" cy="60" r="52" id="progressCircle"></circle>
+        </svg>
+        
+        <div class="time-display">
+            <div class="target-time" id="targetTimeDisplay"></div>
+            <div class="countdown" id="countdownDisplay"></div>
+        </div>
+        
+        <button class="btn pause" id="pauseBtn" onclick="togglePause()">一時停止</button>
+        <button class="btn secondary" onclick="resetTimer()">リセット</button>
+    </div>
+
+    <!-- アラート画面 -->
+    <div id="alertScreen" class="screen">
+        <div class="alert-screen">
+            <div class="alert-icon">🔔</div>
+            <div class="alert-message">時間になりました！</div>
+            <div class="time-display">
+                <div class="target-time" id="alertTimeDisplay"></div>
+            </div>
+            <button class="btn" onclick="resetTimer()">リセット</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let timerMode = 'countdown'; // 'countdown' or 'clock'
+    let targetHour, targetMinute, targetSecond;
+    let totalSeconds, remainingSeconds;
+    let timerInterval;
+    let isPaused = false;
+    let originalTotalSeconds;
+
+    function updateCurrentTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('ja-JP', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+        });
+        
+        document.getElementById('currentTime').textContent = `現在時刻: ${timeString}`;
+        document.getElementById('currentTimeRunning').textContent = `現在時刻: ${timeString}`;
+    }
+
+    function switchMode(mode) {
+        timerMode = mode;
+        
+        // モードボタンの状態更新
+        document.getElementById('countdownMode').classList.toggle('active', mode === 'countdown');
+        document.getElementById('clockMode').classList.toggle('active', mode === 'clock');
+        
+        // 入力フィールドの表示切替
+        document.getElementById('countdownInputs').style.display = mode === 'countdown' ? 'block' : 'none';
+        document.getElementById('clockInputs').style.display = mode === 'clock' ? 'block' : 'none';
+    }
+
+    function setPreset(hours, minutes, seconds) {
+        document.getElementById('hourInputCountdown').value = hours || '';
+        document.getElementById('minuteInputCountdown').value = minutes || '';
+        document.getElementById('secondInputCountdown').value = seconds || '';
+    }
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(screen => {
+            screen.classList.remove('active');
+        });
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function startTimer() {
+        if (timerMode === 'countdown') {
+            startCountdownTimer();
+        } else {
+            startClockTimer();
+        }
+    }
+
+    function startCountdownTimer() {
+        const hours = parseInt(document.getElementById('hourInputCountdown').value) || 0;
+        const minutes = parseInt(document.getElementById('minuteInputCountdown').value) || 0;
+        const seconds = parseInt(document.getElementById('secondInputCountdown').value) || 0;
+
+        if (hours === 0 && minutes === 0 && seconds === 0) {
+            alert('時間を設定してください');
+            return;
+        }
+
+        totalSeconds = hours * 3600 + minutes * 60 + seconds;
+        remainingSeconds = totalSeconds;
+        originalTotalSeconds = totalSeconds;
+        
+        const timeString = formatTime(hours, minutes, seconds);
+        document.getElementById('targetTimeDisplay').textContent = `設定時間: ${timeString}`;
+        document.getElementById('runningTitle').textContent = '⏳ カウントダウン中';
+
+        showScreen('runningScreen');
+        isPaused = false;
+        updatePauseButton();
+        
+        timerInterval = setInterval(updateCountdown, 1000);
+        updateCountdown();
+        updateProgressRing();
+    }
+
+    function startClockTimer() {
+        const hour = parseInt(document.getElementById('hourInputClock').value);
+        const minute = parseInt(document.getElementById('minuteInputClock').value);
+
+        if (isNaN(hour) || isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+            alert('正しい時刻を入力してください（時: 0-23, 分: 0-59）');
+            return;
+        }
+
+        targetHour = hour;
+        targetMinute = minute;
+
+        const targetTimeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        document.getElementById('targetTimeDisplay').textContent = `目標時刻: ${targetTimeString}`;
+        document.getElementById('runningTitle').textContent = '⏰ 時刻待機中';
+
+        // プログレスリングを非表示
+        document.getElementById('progressRing').style.display = 'none';
+
+        showScreen('runningScreen');
+        
+        timerInterval = setInterval(checkClockTime, 1000);
+        updateClockCountdown();
+    }
+
+    function updateCountdown() {
+        if (isPaused) return;
+
+        const hours = Math.floor(remainingSeconds / 3600);
+        const minutes = Math.floor((remainingSeconds % 3600) / 60);
+        const seconds = remainingSeconds % 60;
+
+        const timeString = formatTime(hours, minutes, seconds);
+        const countdownElement = document.getElementById('countdownDisplay');
+        countdownElement.textContent = timeString;
+
+        // 30秒以下で警告表示
+        if (remainingSeconds <= 30 && remainingSeconds > 0) {
+            countdownElement.classList.add('warning');
+        } else {
+            countdownElement.classList.remove('warning');
+        }
+
+        if (remainingSeconds <= 0) {
+            clearInterval(timerInterval);
+            document.getElementById('alertTimeDisplay').textContent = `完了: ${formatTime(Math.floor(originalTotalSeconds / 3600), Math.floor((originalTotalSeconds % 3600) / 60), originalTotalSeconds % 60)}`;
+            showScreen('alertScreen');
+            showNotification('カウントダウン完了', 'タイマーが終了しました！');
+        } else {
+            remainingSeconds--;
+            updateProgressRing();
+        }
+    }
+
+    function checkClockTime() {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+
+        if (currentHour === targetHour && currentMinute === targetMinute) {
+            clearInterval(timerInterval);
+            const alertTimeString = `${targetHour.toString().padStart(2, '0')}:${targetMinute.toString().padStart(2, '0')}`;
+            document.getElementById('alertTimeDisplay').textContent = `到達時刻: ${alertTimeString}`;
+            showScreen('alertScreen');
+            showNotification('タイマー', '設定した時刻になりました！');
+        } else {
+            updateClockCountdown();
+        }
+    }
+
+    function updateClockCountdown() {
+        const now = new Date();
+        const target = new Date();
+        target.setHours(targetHour, targetMinute, 0, 0);
+
+        if (target <= now) {
+            target.setDate(target.getDate() + 1);
+        }
+
+        const diff = target - now;
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        document.getElementById('countdownDisplay').textContent = 
+            `残り時間: ${formatTime(hours, minutes, seconds)}`;
+    }
+
+    function updateProgressRing() {
+        const circle = document.getElementById('progressCircle');
+        const radius = 52;
+        const circumference = 2 * Math.PI * radius;
+        
+        const progress = (originalTotalSeconds - remainingSeconds) / originalTotalSeconds;
+        const strokeDasharray = circumference * progress;
+        
+        circle.style.strokeDasharray = `${strokeDasharray} ${circumference}`;
+    }
+
+    function togglePause() {
+        if (timerMode === 'countdown') {
+            isPaused = !isPaused;
+            updatePauseButton();
+        }
+    }
+
+    function updatePauseButton() {
+        const pauseBtn = document.getElementById('pauseBtn');
+        if (timerMode === 'countdown') {
+            pauseBtn.style.display = 'inline-block';
+            pauseBtn.textContent = isPaused ? '再開' : '一時停止';
+        } else {
+            pauseBtn.style.display = 'none';
+        }
+    }
+
+    function formatTime(hours, minutes, seconds) {
+        if (hours > 0) {
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+    }
+
+    function resetTimer() {
+        clearInterval(timerInterval);
+        isPaused = false;
+        
+        // 入力フィールドをクリア
+        document.getElementById('hourInputCountdown').value = '';
+        document.getElementById('minuteInputCountdown').value = '';
+        document.getElementById('secondInputCountdown').value = '';
+        document.getElementById('hourInputClock').value = '';
+        document.getElementById('minuteInputClock').value = '';
+        
+        // プログレスリングを表示状態に戻す
+        document.getElementById('progressRing').style.display = 'block';
+        
+        showScreen('setupScreen');
+    }
+
+    function showNotification(title, body) {
+        if ('Notification' in window) {
+            if (Notification.permission === 'granted') {
+                new Notification(title, {
+                    body: body,
+                    icon: '⏰'
+                });
+            } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        new Notification(title, {
+                            body: body,
+                            icon: '⏰'
+                        });
+                    }
+                });
+            }
+        }
+    }
+
+    // 初期化
+    setInterval(updateCurrentTime, 1000);
+    updateCurrentTime();
+
+    // 通知許可をリクエスト
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+
+    // プログレスリングの初期設定
+    const circle = document.getElementById('progressCircle');
+    const radius = 52;
+    const circumference = 2 * Math.PI * radius;
+    circle.style.strokeDasharray = `0 ${circumference}`;
+</script>
+```
+
+</body>
+</html>
